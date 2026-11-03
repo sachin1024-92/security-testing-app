@@ -6,13 +6,13 @@ import pandas as pd
 st.set_page_config(page_title="Hardware Security Testing Toolkit", layout="wide")
 
 st.title("🛡️ Hardware Security Testing Toolkit for AI Accelerators")
-st.caption("PhD Research Context: VLSI / AI Accelerators / Hardware Security / Neuromorphic Hardware | Security Maintainer: Sachin Majhee")
+st.caption("Defensive research on hardware security and AI-accelerator architectures at PDPM IIITDM Jabalpur | Vulnerability analysis & secure design validation | Security Maintainer: Sachin Majhee")
 
-tab1, tab2, tab3, tab4 = st.tabs(["Side-Channel Simulation", "Fault Injection Estimator", "Secure Design Checklist", "Integrity Hasher"])
+tab1, tab2, tab3, tab4 = st.tabs(["Side-Channel Vulnerability Analysis", "Fault Injection Estimator", "Secure Design Validation Checklist", "Integrity Hasher"])
 
 with tab1:
-    st.header("Side-Channel Leakage Estimation (Simple Power Model)")
-    st.write("Simulates differential power analysis style leakage based on Hamming weight of intermediate values.")
+    st.header("Side-Channel Vulnerability Analysis (Simple Power Model)")
+    st.write("Simulates differential power analysis style leakage based on Hamming weight of intermediate values for defensive research on AI accelerators.")
     data_width = st.slider("Data width (bits)", 8, 32, 16)
     operations = st.number_input("Number of operations to simulate", 10, 1000, 100)
     if st.button("Generate Simulated Power Trace"):
@@ -23,11 +23,11 @@ with tab1:
         power_trace = np.array(hamming_weights) + noise
         df = pd.DataFrame({"Operation": range(operations), "Hamming Weight": hamming_weights, "Simulated Power": power_trace})
         st.line_chart(df.set_index("Operation")["Simulated Power"])
-        st.success("Trace generated. Higher correlation with HW indicates potential leakage.")
+        st.success("Trace generated. Higher correlation with HW indicates potential leakage for vulnerability analysis.")
 
 with tab2:
-    st.header("Fault Injection Impact Estimator")
-    st.write("Estimate effect of bit-flips or stuck-at faults on MAC operations typical in AI accelerators.")
+    st.header("Fault Injection Impact Estimator (Secure Design Validation)")
+    st.write("Estimate effect of bit-flips or stuck-at faults on MAC operations typical in AI accelerators for secure design validation.")
     original_value = st.number_input("Original accumulator value", value=1000)
     fault_type = st.selectbox("Fault type", ["Bit-flip (random)", "Stuck-at-0", "Stuck-at-1"])
     bit_position = st.slider("Bit position affected", 0, 31, 5)
@@ -41,10 +41,10 @@ with tab2:
         delta = abs(faulty - original_value)
         st.metric("Faulty Value", faulty)
         st.metric("Absolute Error", delta)
-        st.info("In AI accelerators, such faults can propagate into inference accuracy degradation.")
+        st.info("In AI accelerators, such faults can propagate into inference accuracy degradation. Useful for defensive vulnerability analysis.")
 
 with tab3:
-    st.header("Secure Design Checklist for AI / Neuromorphic Hardware")
+    st.header("Secure Design Validation Checklist for AI / Neuromorphic Hardware")
     checks = [
         "Side-channel resistant arithmetic units (masking / hiding)",
         "Fault detection via redundant computation or parity",
@@ -57,7 +57,7 @@ with tab3:
     ]
     for c in checks:
         st.checkbox(c, value=False)
-    st.write("Tick items as they are verified during design review. Aligns with hardware security research goals.")
+    st.write("Tick items as they are verified during design review. Supports secure design validation for research systems and open hardware designs.")
 
 with tab4:
     st.header("Configuration Integrity Hasher")
@@ -74,5 +74,5 @@ with tab4:
         st.success("Use this hash to verify configuration integrity before loading into the accelerator.")
 
 st.sidebar.title("About")
-st.sidebar.info("Developed for PhD research on Hardware Security of AI Accelerators.\nSecurity Maintainer: Sachin Majhee")
-st.sidebar.warning("Educational / Research testing tool only.")
+st.sidebar.info("Defensive research on hardware security and AI-accelerator architectures at PDPM IIITDM Jabalpur.\nIncluding vulnerability analysis and secure design validation.\nSecurity Maintainer: Sachin Majhee")
+st.sidebar.warning("Educational / Research testing tool for defensive purposes only.")
