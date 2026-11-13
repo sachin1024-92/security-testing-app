@@ -37,7 +37,7 @@ streamlit run app.py
 
 ```bash
 pip install pytest
-pytest
+python -m pytest
 ```
 
 ## Role
