@@ -17,15 +17,27 @@ The app provides interactive tools for:
 
 ## Features
 - Streamlit-based interactive dashboard for defensive research
-- Simple power-trace simulation for side-channel vulnerability analysis
-- Fault model impact calculator (stuck-at, bit-flip) for secure design validation
-- Hardware security checklist for AI/neuromorphic designs
-- Secure configuration hashing for integrity validation
+- Hamming-weight power-leakage simulation that reports the measured correlation, the theoretical value, and an estimate of how many traces would be needed to detect the leakage (reproducible with a seed)
+- Single-bit fault model (bit-flip, stuck-at-0, stuck-at-1) on 8 to 32-bit registers, with error by bit position
+- Hardware security checklist for AI/neuromorphic designs, with progress and a downloadable review status
+- Configuration integrity hashing (SHA-256, SHA-512, SHA3-256) for text or uploaded files, with verification against a known-good hash
+
+All side-channel and fault data is simulated. The toolkit does not measure or interact with real hardware.
 
 ## Installation & Run
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
+```
+
+## Project layout
+- `app.py`: the Streamlit interface
+- `hwsec/`: the models (`sidechannel.py`, `faults.py`, `integrity.py`), usable without the UI
+- `tests/`: unit tests
+
+```bash
+pip install pytest
+python -m pytest
 ```
 
 ## Role
