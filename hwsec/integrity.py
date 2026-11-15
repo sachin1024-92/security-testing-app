@@ -19,4 +19,7 @@ def compute_hash(data: bytes | str, algorithm: str = "SHA-256") -> str:
 
 def verify_hash(data: bytes | str, expected_hex: str, algorithm: str = "SHA-256") -> bool:
     """Constant-time comparison against a known-good digest."""
-    return hmac.compare_digest(compute_hash(data, algorithm), expected_hex.strip().lower())
+    # Compare as bytes: comparing str raises TypeError when the pasted text has
+    # non-ASCII characters (smart quotes, zero-width spaces, other scripts).
+    actual = compute_hash(data, algorithm).encode("ascii")
+    return hmac.compare_digest(actual, expected_hex.strip().lower().encode("utf-8"))

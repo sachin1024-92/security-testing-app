@@ -14,7 +14,14 @@ import numpy as np
 
 def hamming_weight(values) -> np.ndarray:
     """Number of set bits in each (non-negative) integer."""
-    arr = np.asarray(values, dtype=np.uint64)
+    raw = np.asarray(values)
+    if raw.size == 0:
+        return np.zeros(raw.shape, dtype=np.int64)
+    if raw.dtype.kind not in "iub":
+        raise ValueError("values must be whole numbers")
+    if raw.min() < 0:
+        raise ValueError("values must not be negative")
+    arr = raw.astype(np.uint64)
     counts = np.zeros(arr.shape, dtype=np.int64)
     while arr.any():
         counts += (arr & np.uint64(1)).astype(np.int64)

@@ -1,5 +1,6 @@
 import hashlib
 import math
+import pathlib
 
 import numpy as np
 import pytest
@@ -77,3 +78,32 @@ def test_hash_and_verify():
     assert compute_hash(b"x", "SHA3-256") == hashlib.sha3_256(b"x").hexdigest()
     with pytest.raises(ValueError):
         compute_hash("x", "MD5")
+
+
+def test_verify_hash_does_not_crash_on_non_ascii_text():
+    digest = compute_hash("config-v1")
+    assert not verify_hash("config-v1", "“" + digest + "”")  # pasted with smart quotes
+    assert not verify_hash("config-v1", "हैश")
+    assert not verify_hash("config-v1", "")
+
+
+def test_hamming_weight_rejects_negative_and_fractional_values():
+    with pytest.raises(ValueError):
+        hamming_weight([-1])
+    with pytest.raises(ValueError):
+        hamming_weight([2.9])
+    assert hamming_weight([]).tolist() == []
+    assert hamming_weight(np.array([7], dtype=np.uint64)).tolist() == [1]
+    assert hamming_weight(2**63).tolist() == 1
+
+
+def test_app_reports_mismatch_for_non_ascii_expected_hash():
+    from streamlit.testing.v1 import AppTest
+
+    app = pathlib.Path(__file__).resolve().parent.parent / "app.py"
+    at = AppTest.from_file(str(app)).run(timeout=30)
+    at.text_input[0].set_value("“abc”")
+    next(b for b in at.button if b.label == "Compute integrity hash").click()
+    at.run(timeout=30)
+    assert not at.exception
+    assert any("Mismatch" in e.value for e in at.error)
