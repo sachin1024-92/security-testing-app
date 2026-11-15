@@ -93,7 +93,7 @@ def test_hamming_weight_rejects_negative_and_fractional_values():
     with pytest.raises(ValueError):
         hamming_weight([2.9])
     assert hamming_weight([]).tolist() == []
-    assert hamming_weight(np.array([7], dtype=np.uint64)).tolist() == [1]
+    assert hamming_weight(np.array([7], dtype=np.uint64)).tolist() == [3]
     assert hamming_weight(2**63).tolist() == 1
 
 
