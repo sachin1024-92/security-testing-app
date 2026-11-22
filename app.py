@@ -10,6 +10,7 @@ from hwsec import (
     compute_hash,
     fault_sweep,
     leakage_correlation,
+    second_order_correlation,
     simulate_power_trace,
     traces_needed,
     verify_hash,
@@ -32,28 +33,46 @@ with tab1:
     st.header("Side-Channel Leakage Model (Hamming weight)")
     st.write(
         "Simulates a power trace that follows the Hamming weight of processed values, then measures how "
-        "strongly the two correlate. Raise the noise to see how hiding countermeasures reduce leakage. "
-        "All data is synthetic."
+        "strongly the two correlate. Raise the noise to see how hiding reduces leakage, or switch on "
+        "masking to see the first-order leakage disappear. All data is synthetic."
     )
     c1, c2, c3 = st.columns(3)
     data_width = c1.slider("Data width (bits)", 8, 32, 16)
     operations = c2.number_input("Operations to simulate", 10, 100000, 1000)
     noise_sigma = c3.slider("Noise sigma (Hamming-weight units)", 0.0, 20.0, 0.5, 0.1)
     seed = st.number_input("Random seed (same seed = same trace)", 0, 2**31 - 1, 42)
+    masked = st.checkbox(
+        "First-order Boolean masking (two shares)",
+        help="Each value v is processed as v XOR m and m, with a fresh random mask m per operation.",
+    )
     if st.button("Generate simulated power trace"):
-        trace = simulate_power_trace(int(operations), data_width, noise_sigma, int(seed))
+        trace = simulate_power_trace(int(operations), data_width, noise_sigma, int(seed), masked=masked)
         r = leakage_correlation(trace["hamming_weight"], trace["power"])
         n = traces_needed(r)
         m1, m2, m3 = st.columns(3)
         m1.metric("Measured correlation", f"{r:.3f}")
-        m2.metric("Expected (theory)", f"{expected_correlation(data_width, noise_sigma):.3f}")
+        m2.metric("Expected (theory)", f"{expected_correlation(data_width, noise_sigma, masked):.3f}")
         m3.metric("Traces needed to detect", "no leakage" if math.isinf(n) else f"{math.ceil(n):,}")
+        if masked:
+            r2 = second_order_correlation(trace["hamming_weight"], trace["power"])
+            n2 = traces_needed(r2)
+            s1, s2 = st.columns(2)
+            s1.metric("Second-order correlation", f"{r2:.3f}")
+            s2.metric("Traces needed (second order)", "no leakage" if math.isinf(n2) else f"{math.ceil(n2):,}")
         df = pd.DataFrame({"Hamming weight": trace["hamming_weight"], "Simulated power": trace["power"]})
         st.line_chart(df.head(300))
-        st.info(
-            "Lower correlation means more traces are needed to exploit the leakage. Masking and hiding "
-            "aim to push that number beyond what an attacker can collect."
-        )
+        if masked:
+            st.info(
+                "With masking the average power no longer follows the value, so the first-order correlation "
+                "is only what chance gives for this many operations. The spread of the power still depends "
+                "on the value, which the second-order figure picks up: first-order masking raises the cost "
+                "of an attack, it does not remove the leakage."
+            )
+        else:
+            st.info(
+                "Lower correlation means more traces are needed to exploit the leakage. Masking and hiding "
+                "aim to push that number beyond what an attacker can collect."
+            )
 
 with tab2:
     st.header("Fault Impact Estimator")
