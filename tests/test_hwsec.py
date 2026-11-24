@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from hwsec import apply_fault, compute_hash, fault_sweep, hamming_weight, leakage_correlation
-from hwsec import simulate_power_trace, traces_needed, verify_hash
+from hwsec import second_order_correlation, simulate_power_trace, traces_needed, verify_hash
 from hwsec.sidechannel import expected_correlation
 
 
@@ -107,3 +107,72 @@ def test_app_reports_mismatch_for_non_ascii_expected_hash():
     at.run(timeout=30)
     assert not at.exception
     assert any("Mismatch" in e.value for e in at.error)
+
+
+def test_masking_keeps_the_unmasked_trace_unchanged():
+    plain = simulate_power_trace(200, seed=7)
+    assert set(plain) == {"intermediates", "hamming_weight", "power"}
+    masked = simulate_power_trace(200, seed=7, masked=True)
+    assert np.array_equal(masked["intermediates"], plain["intermediates"])
+    assert np.array_equal(masked["hamming_weight"], plain["hamming_weight"])
+    assert np.array_equal(masked["power"], simulate_power_trace(200, seed=7, masked=True)["power"])
+
+
+def test_masked_sample_is_the_weight_of_both_shares():
+    t = simulate_power_trace(1000, 16, noise_sigma=0.0, seed=5, masked=True)
+    shares = hamming_weight(t["intermediates"] ^ t["masks"]) + hamming_weight(t["masks"])
+    assert np.array_equal(t["power"], shares)
+
+
+def test_masking_removes_first_order_leakage_but_not_second_order():
+    t = simulate_power_trace(100000, 16, noise_sigma=0.0, seed=3, masked=True)
+    hw, power = t["hamming_weight"], t["power"]
+    assert abs(leakage_correlation(hw, power)) < 0.02
+    assert expected_correlation(16, 0.0, masked=True) == 0.0
+    # Mean is the width whatever the value; variance is width - HW(v).
+    for h in (4, 8, 12):
+        group = power[hw == h]
+        assert group.mean() == pytest.approx(16, abs=0.15)
+        assert group.var() == pytest.approx(16 - h, rel=0.1)
+    assert second_order_correlation(hw, power) < -0.1
+
+
+def test_unmasked_trace_has_no_second_order_leakage():
+    t = simulate_power_trace(100000, 16, noise_sigma=1.0, seed=3)
+    assert abs(second_order_correlation(t["hamming_weight"], t["power"])) < 0.02
+
+
+def test_second_order_correlation_validates_input():
+    with pytest.raises(ValueError):
+        second_order_correlation([1], [1.0])
+    with pytest.raises(ValueError):
+        second_order_correlation([1, 2, 3], [1.0, 2.0])
+
+
+def test_app_masking_checkbox_shows_second_order_leakage():
+    from streamlit.testing.v1 import AppTest
+
+    app = pathlib.Path(__file__).resolve().parent.parent / "app.py"
+    at = AppTest.from_file(str(app)).run(timeout=30)
+    next(n for n in at.number_input if n.label.startswith("Operations")).set_value(100000)
+    next(c for c in at.checkbox if c.label.startswith("First-order Boolean masking")).check()
+    next(b for b in at.button if b.label == "Generate simulated power trace").click()
+    at.run(timeout=60)
+    assert not at.exception
+    metrics = {m.label: m.value for m in at.metric}
+    assert abs(float(metrics["Measured correlation"])) < 0.02
+    assert metrics["Expected (theory)"] == "0.000"
+    assert float(metrics["Second-order correlation"]) < -0.1
+
+
+def test_app_hides_second_order_figures_without_masking():
+    from streamlit.testing.v1 import AppTest
+
+    app = pathlib.Path(__file__).resolve().parent.parent / "app.py"
+    at = AppTest.from_file(str(app)).run(timeout=30)
+    next(b for b in at.button if b.label == "Generate simulated power trace").click()
+    at.run(timeout=60)
+    assert not at.exception
+    labels = [m.label for m in at.metric]
+    assert "Measured correlation" in labels
+    assert "Second-order correlation" not in labels

@@ -18,6 +18,7 @@ The app provides interactive tools for:
 ## Features
 - Streamlit-based interactive dashboard for defensive research
 - Hamming-weight power-leakage simulation that reports the measured correlation, the theoretical value, and an estimate of how many traces would be needed to detect the leakage (reproducible with a seed)
+- Optional first-order Boolean masking (two shares) in the same simulation: the first-order correlation falls to chance level, while a second-order figure (correlation with the squared, mean-centred trace) shows the leakage that remains
 - Single-bit fault model (bit-flip, stuck-at-0, stuck-at-1) on 8 to 32-bit registers, with error by bit position
 - Hardware security checklist for AI/neuromorphic designs, with progress and a downloadable review status
 - Configuration integrity hashing (SHA-256, SHA-512, SHA3-256) for text or uploaded files, with verification against a known-good hash
